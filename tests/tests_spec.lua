@@ -1,0 +1,6 @@
+describe('gdb', function()
+	it('require', function()
+		print(vim.inspect({}))
+		-- require('gdb')
+	end)
+end)
