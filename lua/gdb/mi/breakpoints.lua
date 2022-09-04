@@ -44,7 +44,7 @@ end
 
 function M.delete_sign(id)
 	if not M[id] then return end
-	local ret = vim.fn.sign_unplace('GDBPC', {
+	vim.fn.sign_unplace('GDBPC', {
 		buffer = M[id].buf,
 		id = id
 	})
@@ -55,18 +55,22 @@ end
 function M.parse(str)
 	log.trace('breakpoint event')
 	-- Can be created modified and deleted
-	local file = string.match(str, 'fullname="([^"]+)')
-	local line = tonumber(string.match(str, 'line="([^"]+)'))
-	local id = tonumber(string.match(str, 'number="([^"]+)'))
-	local en = string.match(str, 'enabled="([^"]+)') == 'y'
-	local times = tonumber(string.match(str, 'times="([^"]+)'))
+	local file = string.match(str, 'fullname=(%b"")')
+	file = string.sub(file, 2, -2)
+	local line = string.match(str, 'line=(%b"")')
+	line = tonumber(string.sub(line, 2, -2))
+	local id = string.match(str, 'number=(%b"")')
+	id = tonumber(string.sub(id, 2, -2))
+	local en = string.match(str, 'enabled=(%b"")') == '"y"'
+	local times = string.match(str, 'times=(%b"")')
+	times = tonumber(string.sub(times, 2, -2))
 	log.debug('f: ', file, ', l:', line, 'id:', id, 'e:', en)
 	if not M.files[file] then 
 		M.files[file] = {}
 		M.files[file].bps = {}
 	end
 	-- Note about modified hit in br
-	if not M.files[file].bps[id] then
+	if not M.files[file].bps[id] and id then
 		M.files[file].bps[id] = {}
 	end
 	if M.files[file].buf then
