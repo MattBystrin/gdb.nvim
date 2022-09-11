@@ -3,6 +3,7 @@ local M = {}
 local log = require('gdb.log')
 local pc = require('gdb.mi.stepline')
 local bp = require('gdb.mi.breakpoints')
+local loc = require('gdb.mi.locals')
 
 local api = vim.api
 

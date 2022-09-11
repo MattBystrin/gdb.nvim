@@ -40,4 +40,3 @@ local function start()
 	ui.create({term = tbuf})
 end
 api.nvim_create_user_command('GDBL', start, {})
-

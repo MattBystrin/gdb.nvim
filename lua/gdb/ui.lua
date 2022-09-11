@@ -50,8 +50,4 @@ function M.clean()
 	end
 end
 
-local locals = {}
-local frames = {}
-local breakp = {}
-
 return M

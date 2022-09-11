@@ -1,24 +1,23 @@
 local M = {}
 
+local util = require('gdb.utils')
 M.locals = {}
 
 function M.clear_locals()
-	-- for v in pairs(M.locals) do 
-	-- 	M.locals[v] = nil
-	-- end
 end
 
-function M.parse(data)
-	-- local vars = string.match(data, 'variables=%[([^%]]+)')
-	-- log.info('found vars')
-	-- if vars then 
-	-- 	log.info('get vars ' .. vars)
-	-- end
-	print('Parsing')
-	local str = 'variables=[{name="item",value="{name = 0x555555556008 \\"Resistor\\", price = 10.6}"},{name="s",value="{item = {name = 0x555555556008 \\"Resistor\\", price = 10.6}, count = 1}"},{name="ret",value="1431654544"},{name="i",value="21845"}]'
+-- Follow variables tree in depth to get all values
+-- str represents list of variable values if is a struct or 
+-- just a single value
+-- TODO: Proper tail calls if possible
+
+function M.parse(str)
 	for m in string.gmatch(str, '%b{}') do
-		print(string.sub(m, 2, -2))
+		local name = string.match(m, 'name=(%b"")')
+		name = string.sub(name, 2, -2)
+		local v = string.match(m:sub(2,-2), 'value="(.+)"$')
+		M.locals[name] = v:match('%b{}') and util.parse_tree(v:sub(2,-2)) or v
 	end
 end
 
-M.parse()
+return M

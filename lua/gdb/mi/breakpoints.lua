@@ -18,9 +18,10 @@ function M.create()
 			log.debug('file acmd:', file, 'buf:', buf)
 			log.debug(M.files)
 			if not M.files[file] then
-				log.debug('file not have bp')
+				log.debug('file dont have bp')
 				return
 			end
+			M.files[file].buf = buf
 			for _,v in ipairs(M.files[file].bps) do
 				-- Just wrapper can get rid of it
 				-- Check if sign needs to be placed
@@ -53,9 +54,11 @@ end
 
 
 function M.parse(str)
+	if not str then return end
 	log.trace('breakpoint event')
 	-- Can be created modified and deleted
 	local file = string.match(str, 'fullname=(%b"")')
+	if not file then return end
 	file = string.sub(file, 2, -2)
 	local line = string.match(str, 'line=(%b"")')
 	line = tonumber(string.sub(line, 2, -2))
@@ -65,7 +68,7 @@ function M.parse(str)
 	local times = string.match(str, 'times=(%b"")')
 	times = tonumber(string.sub(times, 2, -2))
 	log.debug('f: ', file, ', l:', line, 'id:', id, 'e:', en)
-	if not M.files[file] then 
+	if not M.files[file] then
 		M.files[file] = {}
 		M.files[file].bps = {}
 	end
@@ -73,12 +76,13 @@ function M.parse(str)
 	if not M.files[file].bps[id] and id then
 		M.files[file].bps[id] = {}
 	end
-	if M.files[file].buf then
-		-- place sign
+	local bp = M.files[file].bps[id]
+	bp.line = line
+	bp.en = en
+	bp.times = times
+	if M.files[file].buf and not bp.sign then
+		bp.sign = M.place_sign(M.files[file].buf, line)
 	end
-	M.files[file].bps[id].line = line
-	M.files[file].bps[id].en = en
-	M.files[file].bps[id].times = times
 	log.debug('bps', M.files)
 end
 

@@ -8,9 +8,9 @@ struct item {
 };
 
 struct storage {
-	struct item item;
 	int count;
-};
+	struct item item;
+}; 
 
 void dummy_func()
 {
