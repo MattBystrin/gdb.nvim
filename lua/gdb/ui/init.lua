@@ -6,10 +6,12 @@ local M = {}
 
 local api = vim.api
 local log = require'gdb.log'
+local signs = require'gdb.ui.signs'
 
 -- Get source file buffer and window
 -- Create window for gdb and other stuff
 function M.create(bufs)
+	signs.init()
 	log.info("creating view", bufs)
 	M.src = api.nvim_get_current_win()
 	api.nvim_command("bo split")
@@ -48,6 +50,25 @@ function M.clean()
 			api.nvim_win_close(M.term, false)
 		end
 	end
+end
+
+function M.delete_pc()
+	if M.buf and M.id then
+		vim.fn.sign_unplace('GDBPC', {
+			buffer = M.buf,
+			id = M.id
+		})
+	end
+end
+
+function M.update_pc(buf, lnum)
+	log.debug('updating pc')
+	M.delete_pc()
+	M.buf = buf
+	M.id = vim.fn.sign_place(0, 'GDBPC', 'GDBPC', buf, {
+		lnum = lnum,
+		priority = 0
+	})
 end
 
 return M

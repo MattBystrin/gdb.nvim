@@ -1,15 +1,8 @@
--- Entry point at least for development
-package.loaded["gdb.mi"] = nil
-package.loaded["gdb.mi.stepline"] = nil
-package.loaded["gdb.mi.breakpoints"] = nil
-package.loaded["gdb.ui"] = nil
-package.loaded["gdb.log"] = nil
-package.loaded["gdb.term"] = nil
 -- Local names for modules
 local log = require'gdb.log'
-local ui = require'gdb.ui'
 local term = require'gdb.term'
 local mi = require'gdb.mi'
+local ui = require'gdb.ui'
 -- Aliases
 local api = vim.api
 -- Stop function
@@ -22,10 +15,10 @@ local function stop()
 	api.nvim_set_var('gdb', false)
 	log.info('plugin stpped')
 end
-local function start()
+local function launch()
 	log.info('starting plugin')
 	api.nvim_create_user_command('GDBS', stop, {})
-	api.nvim_create_user_command('GDBM', mi.write, {nargs='*'})
+	api.nvim_create_user_command('GDBM', mi.send, {nargs='*'})
 	if vim.g.gdb == true then
 		error('already runnig')
 	else
@@ -39,4 +32,4 @@ local function start()
 	-- View stuff
 	ui.create({term = tbuf})
 end
-api.nvim_create_user_command('GDBL', start, {})
+api.nvim_create_user_command('GDBL', launch, {})

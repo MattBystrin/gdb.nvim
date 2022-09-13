@@ -16,7 +16,7 @@ function M.parse(str)
 		local name = string.match(m, 'name=(%b"")')
 		name = string.sub(name, 2, -2)
 		local v = string.match(m:sub(2,-2), 'value="(.+)"$')
-		M.locals[name] = v:match('%b{}') and util.parse_tree(v:sub(2,-2)) or v
+		M.locals[name] = util.parse_value(v)
 	end
 end
 
