@@ -1,10 +1,7 @@
 local M = {}
--- local mi = require('gdb.mi')
--- -stack-list-frames
 
 local log = require('gdb.log')
-local ui = require('gdb.ui')
-local signs = require('gdb.ui.signs')
+--local mi = require('gdb.mi')
 
 function M.get_stack()
 	-- mi.send('-stack-list-frames')
@@ -26,19 +23,23 @@ function M.parse(str)
 end
 
 function M.parse_stop(str)
-	local file = string.match(str, 'fullname="([^"]+)')
-	local line = tonumber(string.match(str, 'line="([^"]+)'))
+	-- thread selected
+	local file = str:match('fullname="([^"]+)')
+	local line = tonumber(str:match('line="([^"]+)'))
+	local thread = tonumber(str:match('thread-id="([^"]+)'))
 	log.debug('stopped at file: ', file, 'line=', line)
-	if file and line then
-		local tmp = vim.api.nvim_get_current_win()
-		ui.open_file(file, line)
-		local buf = vim.api.nvim_get_current_buf()
-		signs.update_pc(buf, line)
-		vim.api.nvim_set_current_win(tmp)
-	end
+	M.curr = {
+		file = file,
+		line = line,
+		thread = thread
+	}
+	return {file = file, line = line}
 end
 
-function M.select_frame()
+-- frame structure is the same as parse_stop
+-- it will be nice to follow DRY
+function M.select_frame(str)
+	local id = str:match('id=""')
 end
 
 return M

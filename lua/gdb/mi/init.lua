@@ -9,6 +9,8 @@ local exp = require('gdb.mi.expressions')
 local frm = require('gdb.mi.frames')
 -- local thr = require('gdb.mi.threads') -- Future plans
 
+local ui = require('gdb.ui')
+
 function M.create()
 	log.debug('creating mi')
 	M.chan = vim.fn.jobstart("tail -f /dev/null #mijob", {
@@ -41,18 +43,25 @@ end
 
 function M.handle(data) -- Note: data is a table 
 	log.trace('data received: ', data)
+	local parse = {
+	{ pattern = '=breakpoint', parser = bps.parse,      event = 'bps' },
+	{ pattern = '*stopped',    parser = frm.parse_stop, event = 'stop'},
+	{ pattern = 'variables=',  parser = loc.parse,      event = 'var'},
+	{ pattern = 'done,value',  parser = exp.parse,      event = 'expr'},
+	{ pattern = 'done,stack',  parser = frm.parse,      event = 'frm'}
+	}
 	for _, str in ipairs(data) do
-		if string.find(str, '=breakpoint') then
-			bps.parse(str)
-		elseif string.find(str, '*stopped') then
-			frm.parse_stop(str)
-		elseif string.find(str, 'variables=') then
-			loc.parse(str)
-		elseif string.find(str, 'done,value') then
-			exp.parse(str)
-		elseif string.find(str, 'done,stack') then
-			frm.parse(str)
+		for _,v in ipairs(parse) do
+			if str:find(v.pattern) then
+				local ret = v.parser(str)
+				if ret then
+					local updates = {}
+					updates[v.event] = v.parser(str)
+					ui.notify(updates)
+				end
+			end
 		end
+		-- Do not forget to refactor pc sign
 	end
 end
 

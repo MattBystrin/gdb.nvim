@@ -22,8 +22,16 @@ function M.create(bufs)
 	api.nvim_set_current_win(M.src) -- Reset view
 end
 
-function M.open(app)
-end
+M.notify = vim.schedule_wrap(function(updates)
+	if not updates then return end
+	if updates.stop then
+		local tmp = vim.api.nvim_get_current_win()
+		local buf = M.open_file(updates.stop.file, updates.stop.line)
+		signs.update_pc(buf, updates.stop.line)
+		vim.api.nvim_set_current_win(tmp)
+	end
+	--print(vim.inspect(updates))
+end)
 
 function M.open_file(file, line)
 	line = line or 0
@@ -37,13 +45,8 @@ function M.open_file(file, line)
 	return vim.api.nvim_get_current_buf()
 end
 
-function M.add(app)
-end
-
-function M.remove(app)
-end
-
-function M.clean()
+function M.cleanup()
+	signs.cleanup()
 	log.info("cleaning view")
 	if M.term and api.nvim_win_is_valid(M.term) then
 		if #api.nvim_tabpage_list_wins(0) > 1 then
@@ -52,23 +55,14 @@ function M.clean()
 	end
 end
 
-function M.delete_pc()
-	if M.buf and M.id then
-		vim.fn.sign_unplace('GDBPC', {
-			buffer = M.buf,
-			id = M.id
-		})
+local function update_view(file, line)
+	if file and line then
+		local tmp = vim.api.nvim_get_current_win()
+		M.open_file(file, line)
+		local buf = vim.api.nvim_get_current_buf()
+		signs.update_pc(buf, line)
+		vim.api.nvim_set_current_win(tmp)
 	end
-end
-
-function M.update_pc(buf, lnum)
-	log.debug('updating pc')
-	M.delete_pc()
-	M.buf = buf
-	M.id = vim.fn.sign_place(0, 'GDBPC', 'GDBPC', buf, {
-		lnum = lnum,
-		priority = 0
-	})
 end
 
 return M

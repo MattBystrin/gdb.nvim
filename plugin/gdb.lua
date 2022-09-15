@@ -9,12 +9,13 @@ local api = vim.api
 local function stop()
 	term.stop()
 	mi.stop()
-	ui.clean()
+	ui.cleanup()
 	api.nvim_del_user_command('GDBS')
 	api.nvim_del_user_command('GDBM')
 	api.nvim_set_var('gdb', false)
 	log.info('plugin stpped')
 end
+
 local function launch()
 	log.info('starting plugin')
 	api.nvim_create_user_command('GDBS', stop, {})

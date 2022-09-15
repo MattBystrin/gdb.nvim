@@ -10,16 +10,15 @@ function M.parse(str)
 	if not str then return end
 	log.trace('breakpoint event')
 	-- Can be created modified and deleted
-	local file = str:match('fullname=(%b"")')
+	local file = str:match('fullname="([^"]+)')
 	if not file then return end
-	file = file:sub(2, -2)
-	local line = str:match('line=(%b"")')
-	local id = str:match('number=(%b"")')
-	local en = str:match('enabled=(%b"")') == '"y"'
-	local times = str:match('times=(%b"")')
-	line = tonumber(line:sub(2, -2))
-	id = tonumber(id:sub(2, -2))
-	times = tonumber(times:sub(2, -2))
+	local line = str:match('line="([^"]+)')
+	local id = str:match('number="([^"]+)')
+	local en = str:match('enabled="([^"]+)') == 'y'
+	local times = str:match('times="([^"]+)')
+	line = tonumber(line)
+	id = tonumber(id)
+	times = tonumber(times)
 	log.debug('f: ', file, ', l:', line, 'id:', id, 'e:', en)
 	if not M.files[file] then
 		M.files[file] = {}
@@ -33,11 +32,7 @@ function M.parse(str)
 	bp.line = line
 	bp.en = en
 	bp.times = times
-	-- Low level module do not need to know ui thing
-	--[[ if M.files[file].buf and not bp.sign then
-		bp.sign = signs.place_bp(M.files[file].buf, line)
-	end ]]
-	log.debug('bps', M.files)
+	log.debug('bps updated', M.files)
 end
 
 function M.clean()
