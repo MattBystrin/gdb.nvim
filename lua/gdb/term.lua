@@ -9,7 +9,7 @@ local base_args = {
 	"-iex", "set breakpoint pending on"
 }
 
-function M.create(command, pty, proc)
+function M.init(command, pty, proc)
 	log.debug("creating term")
 	-- Add some arguments that need to properly start
 	for _, v in ipairs(base_args) do
@@ -34,7 +34,7 @@ function M.create(command, pty, proc)
 	return M.buf
 end
 
-function M.stop()
+function M.cleanup()
 	local ret = vim.fn.jobstop(M.chan)
 	log.debug('term ret: ', ret)
 	return ret

@@ -1,5 +1,9 @@
 local M = {}
 
+function M.setup()
+	print('Gdb setup func')
+end
+
 function M.next()
 	vim.api.nvim_echo({{'next'}}, false, {})
 end

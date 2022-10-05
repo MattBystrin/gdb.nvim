@@ -30,6 +30,7 @@ int some_func(int arg1, int arg2)
 
 int main()
 {
+	const char *str = "Hello, world";
 	struct item item = {
 		.name = "Resistor",
 		.price = 10.6

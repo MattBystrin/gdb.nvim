@@ -6,7 +6,7 @@
 
 int main()
 {
-	std::cout << "Programs starts";
+	std::cout << "Programs starts\n";
 	auto fut = std::async(std::launch::async,[]{
 		int i = 0;
 		while(1) {

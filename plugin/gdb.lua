@@ -7,9 +7,9 @@ local ui = require'gdb.ui'
 local api = vim.api
 -- Stop function
 local function stop()
-	term.stop()
-	mi.stop()
-	ui.cleanup()
+	for _,m in pairs({term, mi, ui}) do
+		m.cleanup()
+	end
 	api.nvim_del_user_command('GDBS')
 	api.nvim_del_user_command('GDBM')
 	api.nvim_set_var('gdb', false)
@@ -19,18 +19,20 @@ end
 local function launch()
 	log.info('starting plugin')
 	api.nvim_create_user_command('GDBS', stop, {})
-	api.nvim_create_user_command('GDBM', mi.send, {nargs='*'})
+	api.nvim_create_user_command('GDBM', function(data)
+		mi.send(data.args)
+	end, {nargs='*'})
 	if vim.g.gdb == true then
 		error('already runnig')
 	else
 		api.nvim_set_var('gdb', true)
 	end
 	-- Start routine
-	mi.create()
-	local tbuf = term.create({
+	local pty = mi.init()
+	local tbuf = term.init({
 		'gdb', '-ex', 'source tests/c/test_gdb'
-	}, mi.get_pty())
+	}, pty)
 	-- View stuff
-	ui.create({term = tbuf})
+	ui.init({term = tbuf})
 end
 api.nvim_create_user_command('GDBL', launch, {})
