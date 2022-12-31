@@ -1,0 +1,4 @@
+file tests/c/test
+br main
+br some_func
+run
