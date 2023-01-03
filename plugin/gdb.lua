@@ -20,8 +20,10 @@ end
 
 function stop_debug()
 	gdb.stop_debug()
-	api.nvim_del_user_command('GdbStart')
+	api.nvim_del_user_command('GdbStop')
 	api.nvim_del_user_command('GdbMI')
 end
 
 api.nvim_create_user_command('GdbStart', start_debug, {nargs='*'})
+
+require'gdb.config'.setup()

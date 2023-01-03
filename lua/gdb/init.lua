@@ -1,31 +1,28 @@
 local M = {}
 
-local term = require'gdb.term'
-local mi = require'gdb.mi'
-local ui = require'gdb.ui'
-local log = require'gdb.log'
-
-local api = vim.api
+local log = require 'gdb.log'
+local core = require 'gdb.core'
 
 function M.start_debug()
-	if vim.g.gdb == true then
-		error('already runnig')
+	if vim.g.gdb_run then
+		error('Debug already runnig')
 	else
-		api.nvim_set_var('gdb', true)
+		vim.g.gdb_run = true
 	end
-	-- Start routine
-	local pty = mi.init()
-	local tbuf = term.init({
-		'gdb', '-ex', 'source tests/c/gdbinit'
-	}, pty)
-	-- View stuff
-	ui.init({term = tbuf})
+	log.info('debug started')
+	-- Register modules
+	core.register_modules(require'gdb.config'.modules)
+	-- Start core
+	core.start()
+	-- Init UI layout and other stuff
+
 end
 
 function M.stop_debug()
-	for _,m in pairs({term, mi, ui}) do
-		m.cleanup()
-	end
+	core.stop()
+	core.unregister_modules()
+
+	vim.g.gdb_run = false
 	log.info('debug stopped')
 end
 
@@ -34,23 +31,46 @@ function M.setup(config)
 end
 
 function M.next()
-	vim.api.nvim_echo({{'next'}}, false, {})
+	vim.api.nvim_echo({ { 'next' } }, false, {})
+	--mi.send("-exec-next")
 end
 
 function M.step()
-	vim.api.nvim_echo({{'step'}}, false, {})
+	vim.api.nvim_echo({ { 'step' } }, false, {})
+	--mi.send("-exec-step")
 end
 
 function M.continue()
-	vim.api.nvim_echo({{'continue'}}, false, {})
+	vim.api.nvim_echo({ { 'continue' } }, false, {})
+	--mi.send("-exec-continue")
 end
 
-function M.toggle_breakpoint()
-	vim.api.nvim_echo({{'toggle bp'}}, false, {})
+function M.stop()
+	vim.api.nvim_echo({ { 'stop execution' } }, false, {})
+	--mi.send("-exec-interrupt")
+end
+
+function M.bkpt()
+	local line, _ = unpack(vim.api.nvim_win_get_cursor(0))
+	local file = vim.api.nvim_buf_get_name(0) -- Current buf
+	vim.api.nvim_echo({ { 'toggle bp' .. file .. ':' .. line } }, false, {})
+end
+
+function M.bkpt_en()
+	local line, _ = unpack(vim.api.nvim_win_get_cursor(0))
+	local file = vim.api.nvim_buf_get_name(0) -- Current buf
+	vim.api.nvim_echo({ { 'bkpt en' .. file .. ':' .. line } }, false, {})
+end
+
+function M.exec_until()
+	local line, _ = unpack(vim.api.nvim_win_get_cursor(0))
+	local file = vim.api.nvim_buf_get_name(0) -- Current buf
+	--mi.send("-exec-until " .. file .. ":" .. line)
 end
 
 function M.finish()
-	vim.api.nvim_echo({{'finish'}}, false, {})
+	vim.api.nvim_echo({ { 'finish' } }, false, {})
+	--mi.send("-exec-finish")
 end
 
 return M

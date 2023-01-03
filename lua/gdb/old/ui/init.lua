@@ -26,16 +26,16 @@ function M.init(bufs)
 	log.info("creating view", bufs)
 	M.src = api.nvim_get_current_win()
 	open_term(bufs.term)
-	locals.init()
+	--locals.init()
 	api.nvim_set_current_win(M.src) -- Reset view
 end
 
 M.notify = vim.schedule_wrap(function(updates)
 	if not updates then return end
 	log.trace(updates)
-	if updates.var then
-		locals.update()
-	end
+	-- if updates.var then
+	-- 	locals.update()
+	-- end
 	if updates.stop then
 		local tmp = vim.api.nvim_get_current_win()
 		local buf = M.open_file(updates.stop.file, updates.stop.line)
@@ -61,7 +61,7 @@ function M.open_file(file, line)
 end
 
 function M.cleanup()
-	locals.cleanup()
+	--locals.cleanup()
 	signs.cleanup()
 	log.info("cleaning view")
 	if M.term and api.nvim_win_is_valid(M.term) then
