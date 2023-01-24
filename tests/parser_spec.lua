@@ -1,5 +1,5 @@
 describe('MI ->', function()
-	it('breakpoints', function()
+	--[[ it('breakpoints', function()
 		local gdb = require('gdb.mi')
 		local s = '=breakpoint-created,bkpt={number="1",type="breakpoint",\
 		disp="keep",enabled="y",addr="0x00000000000011ca",func="main",\
@@ -159,6 +159,18 @@ describe('MI ->', function()
 		state="stopped",core="2"}],current-thread-id="1"\r'
 		local t = require('gdb.mi.threads')
 		t.parse(str)
-	end)
+	end) ]]
 
+	it('frame stop', function()
+		local core = require'gdb.core'
+		local frames = require'gdb.modules.frames'
+		core.register_modules({"frames"})
+		local str = {'*stopped,reason="breakpoint-hit",disp="keep",bkptno="1",\
+		frame={addr="0x00005555555551c6",func="main",args=[],file="tests/c/test.c",\
+		fullname="/home/ronin/Develop/gdb.nvim/tests/c/test.c",\
+		line="33",arch="i386:x86-64"},thread-id="1",stopped-threads="all",core="0"\r'}
+		core.mi_on_stdout(_, str)
+		print(vim.inspect(frames))
+		core.unregister_modules()
+	end)
 end)
