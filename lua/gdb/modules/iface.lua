@@ -1,16 +1,27 @@
 local M = {}
 
-local log = require'gdb.log'
+M.parsers = {
+	{
+		pattern = "<some lua pattern>",
+		handler = function()
+			-- Some processing
+		end
+	}
+}
 
-M.parsers = {}
-M.name = "interface"
+M.name = "abstract"
 
-function M:attach()
-	log.debug('attached ' .. self.name .. ' module')
+function M:on_attach()
+	-- Actions to be done when module is attached
 end
 
-function M:detach()
-	log.debug('detached ' .. self.name .. ' module')
+function M:on_detach()
+	-- Actions to be done when module is detached
+end
+
+function M:on_stop(reason, file, line)
+	-- Actions to be done when programm exection stops
+	-- i.e. open file where execution stopped
 end
 
 function M:new(t)

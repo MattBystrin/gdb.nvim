@@ -1,6 +1,7 @@
 local M = {}
 
 local log = require 'gdb.log'
+
 local api = vim.api
 
 function M.misend(data)
@@ -10,13 +11,12 @@ end
 local modstable = {}
 local parsers = {}
 function M.register_modules(modlist)
-	for _,m in ipairs(modlist) do
+	for _, m in ipairs(modlist) do
 		local res, mod = pcall(require, 'gdb.modules.' .. m)
 		if not res then
-			log.debug('failed to load module ' .. m)
+			log.warning('failed to load module ' .. m)
 		else
 			table.insert(modstable, mod)
-			print(vim.inspect(mod))
 			-- Register parsers
 			if mod.parsers then
 				for _,p in ipairs(mod.parsers) do
@@ -24,15 +24,16 @@ function M.register_modules(modlist)
 				end
 			end
 			-- Attach module
-			print(vim.inspect(parsers))
-			mod:attach()
+			mod:on_attach()
+			log.debug('attached module: ' .. mod.name)
 		end
 	end
 end
 
 function M.unregister_modules()
-	for _,mod in pairs(modstable) do
-		mod:detach()
+	for _, mod in ipairs(modstable) do
+		mod:on_detach()
+		log.debug('detached module: ' .. mod.name)
 		mod = nil
 	end
 	parsers = nil
@@ -40,6 +41,9 @@ end
 
 local function micore_parse(str)
 	log.debug("data in parse: ", str)
+	if str:find("stopped") then
+
+	end
 	for _,p in ipairs(parsers) do
 		if str:find(p.pattern) then
 			p.pfunc(str)
@@ -51,11 +55,9 @@ local midata = ""
 function M.mi_on_stdout(_, data) -- Exported for tests
 	if not data then return end
 	log.debug("data in callback", data)
-	-- Lines must be assembled manually
+	-- Here data have to be assmebled to analyse it line by line
 	for _,v in ipairs(data) do
 		if v:find("\r") then
-			-- gsub is used for having comfotrable
-			-- debug
 			micore_parse(midata .. v:gsub("\r",""))
 			midata = ""
 		else

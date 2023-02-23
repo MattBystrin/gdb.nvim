@@ -3,12 +3,10 @@ local log = require'gdb.log'
 
 M.name = 'frame'
 
-function M:attach()
-	log.debug('attached frames module')
+function M:on_attach()
 end
 
-function M:detach()
-	log.debug('detached frames module')
+function M:on_detach()
 end
 
 
@@ -23,6 +21,7 @@ local function parse_stop(str)
 		line = line,
 		thread = thread
 	}
+	M:render()
 	return {file = fullpath, line = line}
 end
 

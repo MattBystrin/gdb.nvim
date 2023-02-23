@@ -6,6 +6,10 @@ local user_config = {}
 local default = {
 	command = {
 		"gdb",
+		"--cd",
+		"tests/intgr/c",
+		"--ex",
+		"source gdbinit"
 	},
 	remote = {
 		addr = nil,

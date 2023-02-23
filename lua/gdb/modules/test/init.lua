@@ -3,7 +3,7 @@ M.name = 'test'
 
 local log = require'gdb.log'
 
-function M:attach()
+function M:on_attach()
 	log.debug('test attach override')
 end
 

@@ -4,12 +4,11 @@ local log = require('gdb.log')
 
 M.name = "breakpoints"
 
-function M:attach()
-	log.debug('attached breakpoints module')
+function M:on_attach()
 	self.files = {}
 end
 
-function M:detach()
+function M:on_detach()
 	self.files = nil
 	log.debug(self.files)
 end

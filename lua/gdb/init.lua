@@ -5,16 +5,19 @@ local core = require 'gdb.core'
 
 function M.start_debug()
 	if vim.g.gdb_run then
-		error('Debug already runnig')
-	else
-		vim.g.gdb_run = true
+		vim.api.nvim_echo({
+			{'Debug already running!' , 'ErrorMsg' }
+		}, false, {})
+		return
 	end
-	log.info('debug started')
+	vim.g.gdb_run = true
+	log.info('Debug started')
 	-- Register modules
 	core.register_modules(require'gdb.config'.modules)
+	-- Register UI hooks
+	-- ui.register_hooks(core.hooks)
 	-- Start core
 	core.start()
-	-- Init UI layout and other stuff
 
 end
 
@@ -51,19 +54,19 @@ function M.stop()
 end
 
 function M.bkpt()
-	local line, _ = unpack(vim.api.nvim_win_get_cursor(0))
+	local line = unpack(vim.api.nvim_win_get_cursor(0))
 	local file = vim.api.nvim_buf_get_name(0) -- Current buf
 	vim.api.nvim_echo({ { 'toggle bp' .. file .. ':' .. line } }, false, {})
 end
 
 function M.bkpt_en()
-	local line, _ = unpack(vim.api.nvim_win_get_cursor(0))
+	local line = unpack(vim.api.nvim_win_get_cursor(0))
 	local file = vim.api.nvim_buf_get_name(0) -- Current buf
-	vim.api.nvim_echo({ { 'bkpt en' .. file .. ':' .. line } }, false, {})
+	vim.api.nvim_echo({ { 'bkpt_en in ' .. file .. ':' .. line } }, false, {})
 end
 
 function M.exec_until()
-	local line, _ = unpack(vim.api.nvim_win_get_cursor(0))
+	local line = unpack(vim.api.nvim_win_get_cursor(0))
 	local file = vim.api.nvim_buf_get_name(0) -- Current buf
 	--mi.send("-exec-until " .. file .. ":" .. line)
 end

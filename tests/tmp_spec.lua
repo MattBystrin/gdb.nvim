@@ -25,7 +25,7 @@ describe('test', function()
 	end) ]]
 
 	it('start debug', function()
-		local gdb = require'gdb'
+		local gdb = require 'gdb'
 		gdb.setup({
 			modules = {
 				frames = { kek = "kok" },
@@ -45,7 +45,7 @@ describe('test', function()
 	end) ]]
 
 	it('modules load/unload', function()
-		local core = require'gdb.core'
+		local core = require 'gdb.core'
 		core.register_modules({
 			"bkpts",
 			"test",
