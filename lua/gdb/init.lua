@@ -2,6 +2,7 @@ local M = {}
 
 local log = require 'gdb.log'
 local core = require 'gdb.core'
+local ui = require 'gdb.ui'
 
 function M.start_debug()
 	if vim.g.gdb_run then
@@ -12,18 +13,20 @@ function M.start_debug()
 	end
 	vim.g.gdb_run = true
 	log.info('Debug started')
-	-- Register modules
+	-- Prepare
+	ui.prepare()
 	core.register_modules(require'gdb.config'.modules)
-	-- Register UI hooks
-	-- ui.register_hooks(core.hooks)
-	-- Start core
 	core.start()
-
+	ui.start()
 end
 
 function M.stop_debug()
+	if not vim.g.gdb_run then
+		return
+	end
 	core.stop()
 	core.unregister_modules()
+	ui.cleanup()
 
 	vim.g.gdb_run = false
 	log.info('debug stopped')
@@ -35,7 +38,7 @@ end
 
 function M.next()
 	vim.api.nvim_echo({ { 'next' } }, false, {})
-	--mi.send("-exec-next")
+	core.misend("-exec-next")
 end
 
 function M.step()

@@ -5,26 +5,31 @@ local log = require 'gdb.log'
 local api = vim.api
 
 function M.misend(data)
-	api.nvim_chan_send(data .. '\n')
+	api.nvim_chan_send(M.mchan, data .. '\n')
 end
 
 local modstable = {}
 local parsers = {}
+local stop_handlers = {}
+
 function M.register_modules(modlist)
 	for _, m in ipairs(modlist) do
 		local res, mod = pcall(require, 'gdb.modules.' .. m)
 		if not res then
 			log.warning('failed to load module ' .. m)
 		else
+			-- Attach module
 			table.insert(modstable, mod)
+			mod:on_attach()
 			-- Register parsers
 			if mod.parsers then
 				for _,p in ipairs(mod.parsers) do
 					table.insert(parsers, p)
 				end
 			end
-			-- Attach module
-			mod:on_attach()
+			if mod.on_stop then
+				table.insert(stop_handlers, mod.on_stop)
+			end
 			log.debug('attached module: ' .. mod.name)
 		end
 	end
@@ -36,15 +41,33 @@ function M.unregister_modules()
 		log.debug('detached module: ' .. mod.name)
 		mod = nil
 	end
-	parsers = nil
+	parsers = {}
+	modstable = {}
+	stop_handlers = {}
+end
+
+local function default_core_handler(reason, file, line)
+	local ui = require'gdb.ui'
+	ui.open_file(file, line)
 end
 
 local function micore_parse(str)
 	log.debug("data in parse: ", str)
-	if str:find("stopped") then
+	--  TODO: thread select
+	if str:find('*stopped') then
+		local reason = str:match('reason="([^"]+)')
+		local file = str:match('fullname="([^"]+)')
+		local line = tonumber(str:match('line="([^"]+)'))
 
+		default_core_handler(reason, file, line)
+
+		for _, handler in ipairs(stop_handlers) do
+			handler(str)
+		end
+
+		return
 	end
-	for _,p in ipairs(parsers) do
+	for _, p in ipairs(parsers) do
 		if str:find(p.pattern) then
 			p.pfunc(str)
 		end
@@ -70,7 +93,8 @@ local base_args = {
 	"-q",
 	"-iex", "set pagination off",
 	"-iex", "set mi-async on",
-	"-iex", "set breakpoint pending on"
+	"-iex", "set breakpoint pending on",
+	"-iex", "set print pretty"
 }
 
 local function launch_mi()
@@ -118,6 +142,5 @@ function M.stop()
 	vim.fn.jobstop(M.mchan)
 	vim.fn.jobstop(M.tchan)
 end
-
 
 return M

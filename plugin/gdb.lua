@@ -13,7 +13,7 @@ local stop_debug
 local function start_debug()
 	api.nvim_create_user_command('GdbStop', stop_debug, {})
 	api.nvim_create_user_command('GdbMI', function(data)
-		require('gdb.mi').send(data.args)
+		require('gdb.core').misend(data.args)
 	end, {nargs='*'})
 	gdb.start_debug()
 end

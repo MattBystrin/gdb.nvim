@@ -16,7 +16,6 @@ local default = {
 		cmd = nil
 	},
 	modules = {
-		"frames"
 	},
 }
 
