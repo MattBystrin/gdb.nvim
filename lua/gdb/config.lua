@@ -1,9 +1,9 @@
 local M = {}
 
--- Must be local but for debug reasons it is part of table
 local user_config = {}
 
 local default = {
+	file = nil,
 	command = {
 		"gdb",
 		"--cd",
@@ -12,11 +12,28 @@ local default = {
 		"source gdbinit"
 	},
 	remote = {
-		addr = nil,
-		cmd = nil
+		addr = ":1234",
+		cmd = {
+			"gdbserver",
+			"--multi",
+			":1234"
+		}
 	},
 	modules = {
+		test = {
+			config = "value"
+		}
 	},
+	layout = {
+		top = {},
+		left = {},
+		right = { "terminal" },
+		bottom = {}
+	},
+	ui = {
+		linehl = 'StatusLine',
+		bp_sign = 'B',
+	}
 }
 
 -- Have to be reenterable

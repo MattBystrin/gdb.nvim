@@ -32,10 +32,10 @@ describe('test', function()
 				kek = "kok",
 			}
 		})
-		--gdb.start_debug()
+		--gdb.debug_start()
 		local config = require 'gdb.config'
 		print(vim.inspect(config.modules))
-		--gdb.stop_debug()
+		--gdb.debug_stop()
 	end)
 
 	--[[ it('modules iface', function()

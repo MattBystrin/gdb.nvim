@@ -3,11 +3,16 @@ local M = {}
 local log = require'gdb.log'
 
 function M.start()
-	vim.api.nvim_command("bo split")
+	vim.api.nvim_command("bo vsplit")
 	M.term = vim.api.nvim_get_current_win()
-	vim.api.nvim_win_set_height(M.term, 10)
+	local termbuf = require'gdb.core'.get_termbuf()
+	vim.api.nvim_set_current_buf(termbuf)
+	--vim.api.nvim_win_set_height(M.term, 10)
 	vim.opt['winfixheight'] = true
+	vim.opt['winfixwidth'] = true
 	vim.api.nvim_set_current_win(M.source_win)
+
+
 end
 
 function M.prepare()
@@ -23,7 +28,7 @@ end
 
 function M.open_file(file, line)
 	line = line or 0
-	log.info('opening file', file)
+	log.info('opening file ' .. file .. ':' .. line)
 	local oldwin = vim.api.nvim_get_current_win()
 	-- vim.api.nvim_set_current_win()
 	if vim.fn.filereadable(file) == 1 then
@@ -40,6 +45,10 @@ function M.open_file(file, line)
 	})
 
 	vim.api.nvim_set_current_win(oldwin)
+end
+
+function M.reset_pcline()
+	vim.fn.sign_unplace('GdbPC')
 end
 
 return M
