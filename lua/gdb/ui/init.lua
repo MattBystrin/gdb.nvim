@@ -18,7 +18,7 @@ end
 function M.prepare()
 	M.source_win = vim.api.nvim_get_current_win()
 	log.info('UI prepare. Source win ' .. M.source_win)
-	vim.fn.sign_define('GdbPC', { text = '', linehl = 'StatusLine' })
+	vim.fn.sign_define('GdbPC', { text = '', linehl = 'SignColumn' })
 end
 
 function M.cleanup()
@@ -29,21 +29,21 @@ end
 function M.open_file(file, line)
 	line = line or 0
 	log.info('opening file ' .. file .. ':' .. line)
+	vim.fn.sign_unplace('GdbPC')
 	local oldwin = vim.api.nvim_get_current_win()
 	-- vim.api.nvim_set_current_win()
 	if vim.fn.filereadable(file) == 1 then
 		vim.api.nvim_set_current_win(M.source_win)
 		vim.api.nvim_command('edit ' .. file)
 		vim.api.nvim_win_set_cursor(0, {line, 0})
+		local buf = vim.api.nvim_get_current_buf()
+		vim.fn.sign_place(0, 'GdbPC', 'GdbPC', buf, {
+			lnum = line,
+			priority = 0
+		})
+	else
+		vim.api.nvim_echo({ { "Failed to open file: " .. file } }, true, {})
 	end
-
-	vim.fn.sign_unplace('GdbPC')
-	local buf = vim.api.nvim_get_current_buf()
-	vim.fn.sign_place(0, 'GdbPC', 'GdbPC', buf, {
-		lnum = line,
-		priority = 0
-	})
-
 	vim.api.nvim_set_current_win(oldwin)
 end
 
