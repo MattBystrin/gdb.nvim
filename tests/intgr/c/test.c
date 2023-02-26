@@ -8,9 +8,9 @@ struct item {
 };
 
 struct storage {
-	struct item item;
 	int count;
-};
+	struct item item;
+}; 
 
 void dummy_func()
 {
@@ -30,6 +30,7 @@ int some_func(int arg1, int arg2)
 
 int main()
 {
+	const char *str = "Hello, world";
 	struct item item = {
 		.name = "Resistor",
 		.price = 10.6

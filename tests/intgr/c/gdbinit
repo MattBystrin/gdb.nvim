@@ -1,4 +1,4 @@
-file tests/c/test
+file test
 br main
 br some_func
 run
