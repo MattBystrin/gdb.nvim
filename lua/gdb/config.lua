@@ -6,10 +6,6 @@ local default = {
 	file = nil,
 	command = {
 		"gdb",
-		"--cd",
-		"tests/intgr/c",
-		"--ex",
-		"source gdbinit"
 	},
 	remote = {
 		addr = ":1234",
