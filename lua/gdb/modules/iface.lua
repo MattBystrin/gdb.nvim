@@ -1,12 +1,18 @@
 local M = {}
 
-M.parsers = {
+local parsers = {
 	{
 		pattern = "<some lua pattern>",
 		handler = function()
 			-- Some processing
 		end
 	}
+}
+
+local exported = {
+	abstract = function()
+		vim.api.nvim_echo({ { 'abstract action' } }, false, {})
+	end
 }
 
 M.name = "abstract"
@@ -22,6 +28,16 @@ end
 function M:on_stop(reason, file, line)
 	-- Actions to be done when programm exection stops
 	-- i.e. open file where execution stopped
+end
+
+function M:parsers()
+	-- Returns table with parsers
+	return parsers
+end
+
+function M:export()
+	-- Returns table with parsers
+	return exported
 end
 
 function M:new(t)

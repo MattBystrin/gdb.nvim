@@ -9,8 +9,9 @@ function M.mi_send(data)
 end
 
 local modstable = {}
-local parsers = {}
+M.parsers = {}
 local stop_handlers = {}
+M.exported = {}
 
 function M.register_modules(modlist)
 	for name, cfg in pairs(modlist) do
@@ -23,14 +24,14 @@ function M.register_modules(modlist)
 			log.debug('attached module: ' .. mod.name)
 			mod:on_attach(cfg)
 			-- Register parsers
-			if mod.parsers then
-				for _,p in ipairs(mod.parsers) do
-					table.insert(parsers, p)
-				end
+			for _,p in ipairs(mod:parsers()) do
+				table.insert(M.parsers, p)
 			end
 			-- Register on_stop handle
-			if mod.on_stop then
-				table.insert(stop_handlers, mod.on_stop)
+			table.insert(stop_handlers, mod.on_stop)
+			-- Export functions to user
+			for k,f in pairs(mod:export()) do
+				M.exported[k] = f
 			end
 		end
 	end
@@ -75,7 +76,7 @@ local function mi_parse(str)
 		default_error_handler(msg)
 		return
 	end
-	for _, p in ipairs(parsers) do
+	for _, p in ipairs(M.parsers) do
 		if str:find(p.pattern) then
 			p.pfunc(str)
 		end
@@ -151,8 +152,8 @@ function M.start(command)
 end
 
 function M.stop()
-	vim.fn.jobstop(M.mchan)
-	vim.fn.jobstop(M.tchan)
+	pcall(vim.fn.jobstop(M.mchan))
+	pcall(vim.fn.jobstop(M.tchan))
 end
 
 return M
