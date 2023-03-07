@@ -23,11 +23,12 @@ function M.debug_start()
 		return
 	end
 	vim.g.gdb_run = true
+	local config = require'gdb.config'
 	log.info('Debug started')
 	-- Prepare
 	ui.prepare()
-	core.register_modules(require'gdb.config'.modules)
-	core.start()
+	core.register_modules(config.modules)
+	core.start(config.command)
 	ui.start()
 end
 

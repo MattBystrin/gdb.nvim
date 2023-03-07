@@ -1,7 +1,8 @@
 local M = {}
+M.exported = {}
 
 local log = require 'gdb.log'
-
+local mi = require 'gdb.core.mi'
 local api = vim.api
 
 function M.mi_send(data)
@@ -9,9 +10,9 @@ function M.mi_send(data)
 end
 
 local modstable = {}
-M.parsers = {}
-local stop_handlers = {}
-M.exported = {}
+local exported = M.exported
+local stop_handlers = mi.stop_handlers
+local parsers = mi.parsers
 
 function M.register_modules(modlist)
 	for name, cfg in pairs(modlist) do
@@ -25,13 +26,13 @@ function M.register_modules(modlist)
 			mod:on_attach(cfg)
 			-- Register parsers
 			for _,p in ipairs(mod:parsers()) do
-				table.insert(M.parsers, p)
+				table.insert(parsers, p)
 			end
 			-- Register on_stop handle
 			table.insert(stop_handlers, mod.on_stop)
 			-- Export functions to user
 			for k,f in pairs(mod:export()) do
-				M.exported[k] = f
+				exported[k] = f
 			end
 		end
 	end
@@ -43,81 +44,11 @@ function M.unregister_modules()
 		log.debug('detached module: ' .. mod.name)
 		mod = nil
 	end
-	parsers = {}
+	exported = {}
 	modstable = {}
-	stop_handlers = {}
+	mi.cleanup()
 end
 
-local function default_stop_handler(reason, file, line)
-	local ui = require'gdb.ui'
-	ui.open_file(file, line)
-end
-
-local function default_error_handler(msg)
-	vim.api.nvim_echo({ { msg } }, true, {})
-end
-
-local function mi_parse(str)
-	log.debug("data in parse: ", str)
-	--  TODO: thread select
-	if str:find('^*stopped') then
-		local reason = str:match('reason="([^"]+)')
-		local file = str:match('fullname="([^"]+)')
-		local line = tonumber(str:match('line="([^"]+)'))
-		default_stop_handler(reason, file, line)
-		for _, handler in ipairs(stop_handlers) do
-			handler(str)
-		end
-
-		return
-	end
-	if str:find('^%^error') then
-		local msg = str:match('msg="([^"]+)')
-		default_error_handler(msg)
-		return
-	end
-	for _, p in ipairs(M.parsers) do
-		if str:find(p.pattern) then
-			p.pfunc(str)
-		end
-	end
-end
-
-local midata = ""
-function M.mi_on_stdout(_, data) -- Exported for tests
-	if not data then return end
-	log.debug("data in callback", data)
-	-- Here 'raw' data have to be assmebled to analyse it line by line
-	for _,v in ipairs(data) do
-		if v:find("\r") then
-			mi_parse(midata .. v:gsub("\r",""))
-			midata = ""
-		else
-			midata = midata .. v
-		end
-	end
-end
-
-local base_args = {
-	"-q",
-	"-iex", "set pagination off",
-	"-iex", "set mi-async on",
-	"-iex", "set breakpoint pending on",
-	"-iex", "set print pretty"
-}
-
-local function mi_launch()
-	log.debug('creating mi job')
-	M.mchan = vim.fn.jobstart("tail -f /dev/null #mijob", {
-		pty = true,
-		on_exit = function()
-		end,
-		on_stdout = M.mi_on_stdout
-	})
-	log.debug("mi chan: ", M.mchan)
-	if not M.mchan then return nil end
-	return vim.api.nvim_get_chan_info(M.mchan)['pty']
-end
 
 local function term_launch(command)
 	local tmp = api.nvim_get_current_buf() -- Save buffer
@@ -137,23 +68,57 @@ function M.get_termbuf()
 	return M.tbuf
 end
 
+local base_args = {
+	"-q",
+	"-iex", "set pagination off",
+	"-iex", "set mi-async on",
+	"-iex", "set breakpoint pending on",
+	"-iex", "set print pretty"
+}
+
+local remote_chan
+local function remote_launch(command)
+	log.debug('creating remote job')
+	remote_chan = vim.fn.jobstart('gdbserver --multi :1234', {
+		on_stdout = function(_, data)
+			log.debug(data)
+		end,
+		on_stderr = function(_, data)
+			log.debug(data)
+		end,
+		on_exit = function()
+			log.debug("Remote exit")
+		end
+	})
+	log.debug("Remote chan " .. remote_chan)
+	if remote_chan <= 0 then
+		log.debug("Failed to start remote")
+	end
+end
+
 function M.start(command)
 	log.debug("starting core")
+	-- Creating remote
+	remote_launch()
 	-- Creating pty for MI
-	local pty = mi_launch()
-	command = require'gdb.config'.command
-	for _, v in ipairs(base_args) do
-		table.insert(command, v)
+	local pty = mi.launch()
+	local cmd = {}
+	for _, v in ipairs(command) do
+		table.insert(cmd, v)
 	end
-	table.insert(command, "-iex")
-	table.insert(command, "new-ui mi " .. pty)
+	for _, v in ipairs(base_args) do
+		table.insert(cmd, v)
+	end
+	table.insert(cmd, "-iex")
+	table.insert(cmd, "new-ui mi " .. pty)
 	-- Launch terminal
-	term_launch(command)
+	term_launch(cmd)
 end
 
 function M.stop()
-	pcall(vim.fn.jobstop(M.mchan))
-	pcall(vim.fn.jobstop(M.tchan))
+	pcall(vim.fn.jobstop, mi.get_pty())
+	pcall(vim.fn.jobstop, remote_chan)
+	pcall(vim.fn.jobstop, M.tchan)
 end
 
 return M
