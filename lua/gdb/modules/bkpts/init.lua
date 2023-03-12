@@ -10,9 +10,7 @@ end
 
 function M:on_detach()
 	self.files = nil
-	log.debug(self.files)
 end
-
 
 local get_bp_info
 local parse
@@ -78,5 +76,19 @@ M.parsers = {
 		pfunc = parse_list
 	}
 }
+
+function M.bkpt()
+	-- local line = unpack(vim.api.nvim_win_get_cursor(0))
+	-- local file = vim.api.nvim_buf_get_name(0) -- Current buf
+	-- vim.api.nvim_echo({ { 'toggle bp' .. file .. ':' .. line } }, false, {})
+	vim.api.nvim_echo({ { 'not implemented yet' } }, false, {})
+end
+
+function M.bkpt_en()
+	-- local line = unpack(vim.api.nvim_win_get_cursor(0))
+	-- local file = vim.api.nvim_buf_get_name(0) -- Current buf
+	--vim.api.nvim_echo({ { 'bkpt_en in ' .. file .. ':' .. line } }, false, {})
+	vim.api.nvim_echo({ { 'not implemented yet' } }, false, {})
+end
 
 return M

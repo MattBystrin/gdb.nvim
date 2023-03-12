@@ -6,7 +6,7 @@ local mi = require 'gdb.core.mi'
 local api = vim.api
 
 function M.mi_send(data)
-	api.nvim_chan_send(M.mchan, data .. '\n')
+	api.nvim_chan_send(mi.mchan, data .. '\n')
 end
 
 local modstable = {}
@@ -76,10 +76,10 @@ local base_args = {
 	"-iex", "set print pretty"
 }
 
-local remote_chan
 local function remote_launch(command)
+	if not command then return nil end
 	log.debug('creating remote job')
-	remote_chan = vim.fn.jobstart('gdbserver --multi :1234', {
+	local remote_chan = vim.fn.jobstart('gdbserver --multi :1234', {
 		on_stdout = function(_, data)
 			log.debug(data)
 		end,
@@ -94,12 +94,14 @@ local function remote_launch(command)
 	if remote_chan <= 0 then
 		log.debug("Failed to start remote")
 	end
+	return remote_chan
 end
 
-function M.start(command)
+local r_chan
+function M.start(command, remote)
 	log.debug("starting core")
 	-- Creating remote
-	remote_launch()
+	r_chan = remote_launch(remote.cmd)
 	-- Creating pty for MI
 	local pty = mi.launch()
 	local cmd = {}
@@ -111,13 +113,18 @@ function M.start(command)
 	end
 	table.insert(cmd, "-iex")
 	table.insert(cmd, "new-ui mi " .. pty)
+	if remote.addr then
+		local rmt = remote.extended and "extended-remote" or "remote"
+		table.insert(cmd, "-ex")
+		table.insert(cmd, "target " .. rmt .. " " .. remote.addr)
+	end
 	-- Launch terminal
 	term_launch(cmd)
 end
 
 function M.stop()
 	pcall(vim.fn.jobstop, mi.get_pty())
-	pcall(vim.fn.jobstop, remote_chan)
+	pcall(vim.fn.jobstop, r_chan)
 	pcall(vim.fn.jobstop, M.tchan)
 end
 

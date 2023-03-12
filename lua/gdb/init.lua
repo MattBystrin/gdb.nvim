@@ -28,7 +28,7 @@ function M.debug_start()
 	-- Prepare
 	ui.prepare()
 	core.register_modules(config.modules)
-	core.start(config.command)
+	core.start(config.command, config.remote)
 	ui.start()
 end
 

@@ -7,14 +7,7 @@ local default = {
 	command = {
 		"gdb",
 	},
-	remote = {
-		addr = ":1234",
-		cmd = {
-			"gdbserver",
-			"--multi",
-			":1234"
-		}
-	},
+	remote = {},
 	modules = {
 		test = {
 			config = "value"

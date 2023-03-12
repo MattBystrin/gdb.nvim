@@ -1,7 +1,7 @@
 local M = {}
 local log = require'gdb.log'
 
-local function default_stop_handler(_, file, line)
+local function default_stop_handler(file, line, _)
 	local ui = require'gdb.ui'
 	ui.open_file(file, line)
 end
@@ -15,12 +15,11 @@ M.stop_handlers = {}
 
 local function mi_parse(str)
 	log.debug("data in parse: ", str)
-	--  TODO: thread select
 	if str:find('^*stopped') then
 		local reason = str:match('reason="([^"]+)')
 		local file = str:match('fullname="([^"]+)')
 		local line = tonumber(str:match('line="([^"]+)'))
-		default_stop_handler(reason, file, line)
+		default_stop_handler(file, line, reason)
 		for _, handler in ipairs(M.stop_handlers) do
 			handler(str)
 		end
@@ -30,6 +29,13 @@ local function mi_parse(str)
 		local msg = str:match('msg="([^,$]+)"')
 		default_error_handler(msg)
 		return
+	end
+	log.debug('checking for thread select')
+	if str:find('^=thread%-selected') then
+		local file = str:match('fullname="([^"]+)')
+		local line = tonumber(str:match('line="([^"]+)'))
+		log.debug('Frame changed ' .. file .. ':' .. line)
+		default_stop_handler(file, line)
 	end
 	for _, p in ipairs(M.parsers) do
 		if str:find(p.pattern) then
