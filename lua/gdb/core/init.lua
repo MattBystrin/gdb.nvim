@@ -27,7 +27,7 @@ function M.register_modules(modlist)
 			mod:on_attach(cfg)
 			-- Register parsers
 			vim.list_extend(parsers, mod:parsers())
-			-- Register on_stop handles
+			-- Register stop handles
 			vim.list_extend(stop_handlers, mod:stop_handlers())
 			-- Export functions to user
 			M.exported = vim.tbl_extend("keep", mod:export(), M.exported)
@@ -76,7 +76,7 @@ local base_args = {
 local function remote_launch(command)
 	if not command then return nil end
 	log.debug('creating remote job')
-	local remote_chan = vim.fn.jobstart('gdbserver --multi :1234', {
+	local remote_chan = vim.fn.jobstart(command, {
 		on_stdout = function(_, data) log.debug(data) end,
 		on_stderr = function(_, data) log.debug(data) end,
 		on_exit = function() log.debug("Remote exit") end

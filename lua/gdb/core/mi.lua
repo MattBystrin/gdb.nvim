@@ -1,8 +1,8 @@
 local M = {}
 local log = require'gdb.log'
+local ui = require'gdb.ui'
 
 local function default_stop_handler(file, line, _)
-	local ui = require'gdb.ui'
 	ui.open_file(file, line)
 end
 
