@@ -7,7 +7,12 @@ local ui = require 'gdb.ui'
 M.__index = function(_, key)
 	if not core.exported[key] then
 		return function()
-			vim.api.nvim_echo({ { 'Function ' .. key .. '() not exist or not exported' } }, false, {})
+			vim.api.nvim_echo(
+				{{ 'Function gdb.' .. key .. '() not ' ..
+				'exist or not exported', 'WarningMsg' }},
+				false,
+				{}
+			)
 		end
 	else
 		return core.exported[key]
@@ -17,9 +22,11 @@ setmetatable(M, M)
 
 function M.debug_start()
 	if vim.g.gdb_run then
-		vim.api.nvim_echo({
-			{ 'Debug already running!', 'ErrorMsg' }
-		}, false, {})
+		vim.api.nvim_echo(
+			{{ 'Debug already running!', 'ErrorMsg' }},
+			false,
+			{}
+		)
 		return
 	end
 	vim.g.gdb_run = true
