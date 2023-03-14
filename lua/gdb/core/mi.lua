@@ -30,11 +30,9 @@ local function mi_parse(str)
 		default_error_handler(msg)
 		return
 	end
-	log.debug('checking for thread select')
 	if str:find('^=thread%-selected') then
 		local file = str:match('fullname="([^"]+)')
 		local line = tonumber(str:match('line="([^"]+)'))
-		log.debug('Frame changed ' .. file .. ':' .. line)
 		default_stop_handler(file, line)
 	end
 	for _, p in ipairs(M.parsers) do

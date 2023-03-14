@@ -1,5 +1,4 @@
 local M = {}
-
 local parsers = {
 	{
 		pattern = "<some lua pattern>",
@@ -15,28 +14,36 @@ local exported = {
 	end
 }
 
+local stop_handlers = {
+	function(reason, file, line)
+		_ = reason
+		_ = file
+		_ = line
+	end
+}
+
 M.name = "abstract"
 
+-- Actions to be done when module is attached
 function M:on_attach()
-	-- Actions to be done when module is attached
 end
 
+-- Actions to be done when module is detached
 function M:on_detach()
-	-- Actions to be done when module is detached
 end
 
-function M:on_stop(reason, file, line)
-	-- Actions to be done when programm exection stops
-	-- i.e. open file where execution stopped
-end
-
+-- Returns table with parsers
 function M:parsers()
-	-- Returns table with parsers
 	return parsers
 end
 
+-- Return table with stop handlers
+function M:stop_handlers()
+	return stop_handlers
+end
+
+-- Returns table with parsers
 function M:export()
-	-- Returns table with parsers
 	return exported
 end
 

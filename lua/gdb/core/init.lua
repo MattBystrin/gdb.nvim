@@ -1,5 +1,6 @@
 local M = {}
 M.exported = {}
+M.modstable = {}
 
 local log = require 'gdb.log'
 local mi = require 'gdb.core.mi'
@@ -9,7 +10,7 @@ function M.mi_send(data)
 	api.nvim_chan_send(mi.mchan, data .. '\n')
 end
 
-local modstable = {}
+local modstable = M.modstable
 local exported = M.exported
 local stop_handlers = mi.stop_handlers
 local parsers = mi.parsers
@@ -25,15 +26,11 @@ function M.register_modules(modlist)
 			log.debug('attached module: ' .. mod.name)
 			mod:on_attach(cfg)
 			-- Register parsers
-			for _,p in ipairs(mod:parsers()) do
-				table.insert(parsers, p)
-			end
-			-- Register on_stop handle
-			table.insert(stop_handlers, mod.on_stop)
+			vim.list_extend(parsers, mod:parsers())
+			-- Register on_stop handles
+			vim.list_extend(stop_handlers, mod:stop_handlers())
 			-- Export functions to user
-			for k,f in pairs(mod:export()) do
-				exported[k] = f
-			end
+			M.exported = vim.tbl_extend("keep", mod:export(), M.exported)
 		end
 	end
 end
@@ -44,7 +41,7 @@ function M.unregister_modules()
 		log.debug('detached module: ' .. mod.name)
 		mod = nil
 	end
-	exported = {}
+	M.exported = {}
 	modstable = {}
 	mi.cleanup()
 end
@@ -80,15 +77,9 @@ local function remote_launch(command)
 	if not command then return nil end
 	log.debug('creating remote job')
 	local remote_chan = vim.fn.jobstart('gdbserver --multi :1234', {
-		on_stdout = function(_, data)
-			log.debug(data)
-		end,
-		on_stderr = function(_, data)
-			log.debug(data)
-		end,
-		on_exit = function()
-			log.debug("Remote exit")
-		end
+		on_stdout = function(_, data) log.debug(data) end,
+		on_stderr = function(_, data) log.debug(data) end,
+		on_exit = function() log.debug("Remote exit") end
 	})
 	log.debug("Remote chan " .. remote_chan)
 	if remote_chan <= 0 then
@@ -105,18 +96,12 @@ function M.start(command, remote)
 	-- Creating pty for MI
 	local pty = mi.launch()
 	local cmd = {}
-	for _, v in ipairs(command) do
-		table.insert(cmd, v)
-	end
-	for _, v in ipairs(base_args) do
-		table.insert(cmd, v)
-	end
-	table.insert(cmd, "-iex")
-	table.insert(cmd, "new-ui mi " .. pty)
+	vim.list_extend(cmd, command)
+	vim.list_extend(cmd, base_args)
+	vim.list_extend(cmd, {"-iex", "new-ui mi " .. pty})
 	if remote.addr then
 		local rmt = remote.extended and "extended-remote" or "remote"
-		table.insert(cmd, "-ex")
-		table.insert(cmd, "target " .. rmt .. " " .. remote.addr)
+		vim.list_extend(cmd, {"-ex", "target " .. rmt .. " " .. remote.addr})
 	end
 	-- Launch terminal
 	term_launch(cmd)
