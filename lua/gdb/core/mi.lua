@@ -37,7 +37,7 @@ local function mi_parse(str)
 	end
 	for _, p in ipairs(M.parsers) do
 		if str:find(p.pattern) then
-			p.pfunc(str)
+			p.handler(str)
 		end
 	end
 end
