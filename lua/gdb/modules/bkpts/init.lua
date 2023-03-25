@@ -1,34 +1,23 @@
 local M = require('gdb.modules.iface'):new()
 
+local core = require('gdb.core')
 local log = require('gdb.log')
 
 M.name = "breakpoints"
-M.files = {}
+
+--[[
+	bps have default, indexed by num
+	files have bp indexes contained in file 
+--]]
 
 function M:on_attach()
-	M.files = {}
+	vim.fn.sign_define('GdbBP', { text = 'B', texthl = 'WarningMsg' })
+	self.bps = {}
 end
 
 function M:on_detach()
-	M.files = nil
-end
-
-local parse
-local parse_list
-local delete_handler
-
--- '=breakpoint-created,bkpt={...}'
---  '=breakpoint-modified,bkpt={...}'
---  '=breakpoint-deleted,id=NUMBER'
---
-
-function M.parsers()
-	return {
-		{ pattern = '^=breakpoint%-created', handler = parse },
-		{ pattern = '^=breakpoint%-modified', handler = parse },
-		{ pattern = '^=breakpoint%-deleted', handler = delete_handler },
-		{ pattern = '^%^done,BreakpointTable', handler = parse_list}
-	}
+	vim.fn.sign_undefine('GdbBP')
+	self.bps = nil
 end
 
 local function get_bp_info(str)
@@ -38,65 +27,87 @@ local function get_bp_info(str)
 	local hits = tonumber(str:match('times="([^"]+)'))
 	local en = str:match('enabled="([^"]+)') == 'y'
 	local cond = str:match('cond="([^"]+)')
-	if not file or not id then return end
-	log.debug('f: ', file, ', l:', line, 'id:', id, 'e:', en)
-	if not M.files[file] then
-		M.files[file] = {}
-		M.files[file].bps = {}
-	end
-	-- Note about modified hit in br
-	if not M.files[file].bps[id] and id then
-		M.files[file].bps[id] = {}
-	end
-	local bp = M.files[file].bps[id]
-	bp.line = line
-	bp.en = en
-	bp.hits = hits
-	bp.cond = cond
-	log.debug('bps updated', M.files)
-	return file, line
+	local addr = str:match('addr="([^"]+)')
+
+	if not id then return end
+
+	M.bps[id] = M.bps[id] or {}
+	M.bps[id].file = file
+	M.bps[id].line = line
+	M.bps[id].en = en
+	M.bps[id].hits = hits
+	M.bps[id].cond = cond
+	M.bps[id].addr = addr
+
+	return file, line, id
 end
 
-parse = function(str)
+local function parse(str)
 	log.trace('breakpoint event')
-	-- Can be created modified and deleted
-	local file, line = get_bp_info(str)
-	return {file = file, line = line}
+	local file, line, id = get_bp_info(str)
+
+	local buf = vim.api.nvim_get_current_buf()
+
+	vim.fn.sign_place(id, 'GdbBP', 'GdbBP', buf, {
+		lnum = line,
+		priority = 0
+	})
 end
 
-delete_handler = function(str)
+local function delete_handler(str)
 	local id = tonumber(str:match('id="([^"]+)'))
 	if not id then return end
 
-	for _,v in ipairs(M.files) do
-		if v.bps[id] then
-			v.bps[id] = nil
-		end
-	end
+	M.bps[id] = nil
 end
 
 
-parse_list = function(str)
+local function parse_list(str)
 	for s in str:gmatch("bkpt=(%b{})") do
 		get_bp_info(s)
 	end
 end
 
+-- '=breakpoint-created,bkpt={...}'
+-- '=breakpoint-modified,bkpt={...}'
+-- '=breakpoint-deleted,id=NUMBER'
+-- '^done,bkpt={}'
+-- '^done,BreakpointTable'
 
--- Add/delete breakpoint
-local function bkpt()
-	-- local line = unpack(vim.api.nvim_win_get_cursor(0))
-	-- local file = vim.api.nvim_buf_get_name(0) -- Current buf
-	-- vim.api.nvim_echo({ { 'toggle bp' .. file .. ':' .. line } }, false, {})
-	vim.api.nvim_echo({ { 'not implemented yet' } }, false, {})
+function M.parsers()
+	return {
+	{ pattern = '^=breakpoint%-created', handler = parse },
+	{ pattern = '^=breakpoint%-modified', handler = parse },
+	{ pattern = '^=breakpoint%-deleted', handler = delete_handler },
+	{ pattern = '^%^done,bkpt=', handler = parse},
+	{ pattern = '^%^done,BreakpointTable', handler = parse_list} }
 end
 
--- Enable/diasble breakpoint
-local function bkpt_en()
-	-- local line = unpack(vim.api.nvim_win_get_cursor(0))
-	-- local file = vim.api.nvim_buf_get_name(0) -- Current buf
-	--vim.api.nvim_echo({ { 'bkpt_en in ' .. file .. ':' .. line } }, false, {})
-	vim.api.nvim_echo({ { 'not implemented yet' } }, false, {})
+
+local function bkpt(opt)
+	opt = opt or {}
+	local line = unpack(vim.api.nvim_win_get_cursor(0))
+	local file = vim.api.nvim_buf_get_name(0) -- Current buf
+
+	log.debug(M.bps)
+
+	for id, bp in pairs(M.bps) do
+		log.debug(bp.file == file and bp.line == line)
+		if bp.file == file and bp.line == line then
+			M.bps[id] = nil
+			core.mi_send("-break-delete " .. id)
+			vim.fn.sign_unplace('GdbBP', { id = id })
+			return
+		end
+	end
+
+	core.mi_send("-break-insert " .. file .. ":" .. line)
+end
+
+function M.export()
+	return {
+		bkpt = bkpt
+	}
 end
 
 return M
