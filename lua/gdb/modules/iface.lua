@@ -9,8 +9,9 @@ local parsers = {
 }
 
 local exported = {
-	abstract = function()
+	abstract = function(args)
 		vim.api.nvim_echo({ { 'abstract action' } }, false, {})
+		vim.api.nvim_echo({ { vim.inspect(args) } }, false, {})
 	end
 }
 
@@ -25,7 +26,7 @@ local stop_handlers = {
 M.name = "abstract"
 
 -- Actions to be done when module is attached
-function M:on_attach()
+function M:on_attach(cfg)
 end
 
 -- Actions to be done when module is detached

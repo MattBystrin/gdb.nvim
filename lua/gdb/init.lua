@@ -5,17 +5,17 @@ local core = require 'gdb.core'
 local ui = require 'gdb.ui'
 
 M.__index = function(_, key)
-	if not core.exported[key] then
-		return function()
+	return function(args)
+		if not core.exported[key] then
 			vim.api.nvim_echo(
 				{{ 'Function gdb.' .. key .. '() not ' ..
 				'exist or not exported', 'WarningMsg' }},
 				false,
 				{}
 			)
+		else
+			core.exported[key](args)
 		end
-	else
-		return core.exported[key]
 	end
 end
 setmetatable(M, M)
