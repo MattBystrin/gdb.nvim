@@ -5,22 +5,49 @@ local log = require('gdb.log')
 
 M.name = "breakpoints"
 
+local deafult_cfg = {
+	texthl = 'WarningMsg',
+	text = 'B'
+}
+
 --[[
 	bps have default, indexed by num
 	files have bp indexes contained in file 
 --]]
 
-function M:on_attach()
+local function enter_callback(args)
+	local file = vim.fn.fnamemodify(args.file, ':p')
+	local buf = args.buf
+	log.debug('file acmd:', file, 'buf:', buf)
+	for id, bp in pairs(M.bps) do
+		if bp.file == file then
+			vim.fn.sign_place(id, 'GdbBP', 'GdbBP', buf, {
+				lnum = bp.line,
+				priority = 0
+			})
+		end
+	end
+end
+
+function M:on_attach(cfg)
+	cfg = cfg or {}
+	vim.tbl_deep_extend('keep', deafult_cfg, cfg)
+
+	M._cmd_enter = vim.api.nvim_create_autocmd('BufEnter',{
+		pattern = {'*.c', '*.h', '*.cpp', '*.hpp', '*.rs'},
+		callback = enter_callback
+	})
+
 	vim.fn.sign_define('GdbBP', { text = 'B', texthl = 'WarningMsg' })
-	self.bps = {}
+	M.bps = {}
 end
 
 function M:on_detach()
 	vim.fn.sign_undefine('GdbBP')
-	self.bps = nil
+	M.bps = nil
 end
 
-local function get_bp_info(str)
+local function parse_bp_msg(str)
 	local file = str:match('fullname="([^"]+)')
 	local line = tonumber(str:match('line="([^"]+)'))
 	local id = tonumber(str:match('number="([^"]+)'))
@@ -44,27 +71,31 @@ end
 
 local function parse(str)
 	log.trace('breakpoint event')
-	local file, line, id = get_bp_info(str)
+	local file, line, id = parse_bp_msg(str)
 
-	local buf = vim.api.nvim_get_current_buf()
-
-	vim.fn.sign_place(id, 'GdbBP', 'GdbBP', buf, {
-		lnum = line,
-		priority = 0
-	})
+	local bufs = vim.fn.getbufinfo({buflisted = true})
+	for _, buf in ipairs(bufs) do
+		if buf.name == file then
+			vim.fn.sign_place(id, 'GdbBP', 'GdbBP', buf.bufnr, {
+				lnum = line,
+				priority = 0
+			})
+			-- vim.api.nvim_win_set_cursor(ui.source_win, {line, 0})
+		end
+	end
 end
 
 local function delete_handler(str)
 	local id = tonumber(str:match('id="([^"]+)'))
 	if not id then return end
-
+	vim.fn.sign_unplace('GdbBP', { id = id })
 	M.bps[id] = nil
 end
 
 
 local function parse_list(str)
 	for s in str:gmatch("bkpt=(%b{})") do
-		get_bp_info(s)
+		parse_bp_msg(s)
 	end
 end
 
