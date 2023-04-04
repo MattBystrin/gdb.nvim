@@ -39,7 +39,7 @@ function M.open_file(file, line)
 		local buf = vim.api.nvim_get_current_buf()
 		vim.fn.sign_place(0, 'GdbPC', 'GdbPC', buf, {
 			lnum = line,
-			priority = 0
+			priority = 10
 		})
 	else
 		vim.api.nvim_echo({ { "Failed to open file: " .. file } }, true, {})
