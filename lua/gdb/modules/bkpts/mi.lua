@@ -21,7 +21,7 @@ function M.parse_internal(str, tbl)
 	tbl[id].addr = addr
 	tbl[id].type = type
 
-	return tbl[id]
+	return tbl[id], id
 end
 
 return M

@@ -1,5 +1,6 @@
 local M = require('gdb.modules.iface'):new()
 M.name = "breakpoints"
+M.bkpts = {}
 
 local core = require('gdb.core')
 local log = require('gdb.log')
@@ -13,7 +14,7 @@ local deafult_cfg = {
 }
 
 local function getter()
-	return M.bps
+	return M.bkpts
 end
 
 function M:on_attach(cfg)
@@ -21,29 +22,29 @@ function M:on_attach(cfg)
 	vim.tbl_deep_extend('keep', deafult_cfg, cfg)
 
 	ui.setup(getter)
-	M.bps = {}
 end
 
 function M:on_detach()
 	ui.cleanup()
-	M.bps = nil
+	M.bkpts = {}
 end
 
 local function modify_handler(str)
-	local bkpt = mi.parse_internal(str, M.bps)
-	ui.sign_set(bkpt)
+	log.debug("Breakpoint modified", M.bkpts)
+	local bkpt, id = mi.parse_internal(str, M.bkpts)
+	ui.sign_set(bkpt, id)
 end
 
 local function delete_handler(str)
 	local id = tonumber(str:match('id="([^"]+)'))
 	if not id then return end
-	ui.sign_unset(M.bps[id])
-	M.bps[id] = nil
+	ui.sign_unset(M.bkpts[id], id)
+	M.bkpts[id] = nil
 end
 
 local function list_handler(str)
 	for s in str:gmatch("bkpt=(%b{})") do
-		mi.parse_internal(s, M.bps)
+		mi.parse_internal(s, M.bkpts)
 	end
 end
 
@@ -52,13 +53,13 @@ local function bkpt(opt)
 	local line = opt.line or unpack(vim.api.nvim_win_get_cursor(0))
 	local file = opt.file or vim.api.nvim_buf_get_name(0) -- Current buf
 
-	log.debug(M.bps)
+	log.debug(M.bkpts)
 
-	for id, bp in pairs(M.bps) do
+	for id, bp in pairs(M.bkpts) do
 		if bp.file == file and bp.line == line then
-			M.bps[id] = nil
+			M.bkpts[id] = nil
 			core.mi_send("-break-delete " .. id)
-			vim.fn.sign_unplace('GdbBP', { id = id })
+			ui.sign_unset(bp, id)
 			return
 		end
 	end
@@ -71,13 +72,16 @@ local function bkpt_en(opt)
 	local line = opt.line or unpack(vim.api.nvim_win_get_cursor(0))
 	local file = opt.file or vim.api.nvim_buf_get_name(0) -- Current buf
 
-	for id, bp in pairs(M.bps) do
+	for id, bp in pairs(M.bkpts) do
 		if bp.file == file and bp.line == line then
 			if bp.en then
-				core.mi_send("-break-enable " .. id)
-			else
 				core.mi_send("-break-disable " .. id)
+				bp.en = false
+			else
+				core.mi_send("-break-enable " .. id)
+				bp.en = true
 			end
+			ui.sign_update(bp, id)
 			return
 		end
 	end
@@ -85,9 +89,9 @@ end
 
 local function dprintf(opt)
 	opt = opt or {}
+	local cond = opt.cond or vim.fn.input('dprintf() format : ')
 	local line = unpack(vim.api.nvim_win_get_cursor(0))
 	local file = vim.api.nvim_buf_get_name(0) -- Current buf
-	local cond = vim.fn.input('dprintf() format : ')
 	if cond == "" then return end
 	-- read about command completion
 	core.mi_send('-dprintf-insert ' .. file .. ':' .. line .. ' ' .. cond)
