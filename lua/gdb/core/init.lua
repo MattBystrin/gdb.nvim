@@ -26,7 +26,7 @@ function M.register_modules(modlist)
 			log.debug('attached module: ' .. mod.name)
 			mod:on_attach(cfg)
 			-- Register parsers
-			vim.list_extend(parsers, mod:parsers())
+			vim.list_extend(mi.parsers, mod:parsers())
 			-- Register stop handles
 			vim.list_extend(stop_handlers, mod:stop_handlers())
 			-- Export functions to user
@@ -43,7 +43,10 @@ function M.unregister_modules()
 	end
 	M.exported = {}
 	modstable = {}
+	parsers = {}
 	mi.cleanup()
+	log.debug(parsers)
+	log.debug(modstable)
 end
 
 

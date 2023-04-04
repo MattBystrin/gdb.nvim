@@ -47,9 +47,10 @@ function M.mi_on_stdout(_, data) -- Exported for tests
 	if not data then return end
 	log.debug("data in callback", data)
 	-- Here 'raw' data have to be assmebled to analyse it line by line
+	-- For some reason drop other commands if there more than 2
 	for _,v in ipairs(data) do
 		if v:find("\r") then
-			mi_parse(midata .. v:gsub("\r",""))
+			mi_parse(midata .. v)
 			midata = ""
 		else
 			midata = midata .. v
