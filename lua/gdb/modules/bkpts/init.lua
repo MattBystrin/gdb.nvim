@@ -72,16 +72,18 @@ local function bkpt_en(opt)
 	local line = opt.line or unpack(vim.api.nvim_win_get_cursor(0))
 	local file = opt.file or vim.api.nvim_buf_get_name(0) -- Current buf
 
-	for id, bp in pairs(M.bkpts) do
-		if bp.file == file and bp.line == line then
-			if bp.en then
+	for id, bkpt in pairs(M.bkpts) do
+		if bkpt.file == file and bkpt.line == line then
+			if bkpt.en then
 				core.mi_send("-break-disable " .. id)
-				bp.en = false
+				ui.sign_unset(bkpt, id)
+				bkpt.en = false
 			else
 				core.mi_send("-break-enable " .. id)
-				bp.en = true
+				ui.sign_unset(bkpt, id)
+				bkpt.en = true
 			end
-			ui.sign_update(bp, id)
+			ui.sign_set(bkpt, id)
 			return
 		end
 	end

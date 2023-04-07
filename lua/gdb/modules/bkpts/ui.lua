@@ -46,14 +46,9 @@ function M.sign_set(bkpt, id)
 				lnum = bkpt.line,
 				priority = 0
 			})
-			vim.api.nvim_win_set_cursor(ui.source_win, {bkpt.line, 0})
+			-- vim.api.nvim_win_set_cursor(ui.source_win, {bkpt.line, 0})
 		end
 	end
-end
-
-function M.sign_update(bkpt, id)
-	M.sign_unset(bkpt, id)
-	M.sign_set(bkpt, id)
 end
 
 function M.sign_unset(bkpt, id)
