@@ -34,7 +34,7 @@ function M.cleanup()
 	vim.fn.sign_undefine('GdbBPe')
 	vim.fn.sign_undefine('GdbDP')
 	vim.fn.sign_undefine('GdbDPe')
-	vim.api.nvim_clear_autocmds({group = autocmd})
+	vim.api.nvim_del_autocmd(autocmd)
 end
 
 function M.sign_set(bkpt, id)
