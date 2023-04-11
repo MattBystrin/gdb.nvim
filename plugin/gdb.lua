@@ -24,5 +24,3 @@ function debug_stop()
 end
 
 api.nvim_create_user_command('GdbStart', debug_start, {nargs='*'})
-
-require'gdb.config'.setup()
