@@ -111,6 +111,7 @@ function M.start(command, remote)
 end
 
 function M.stop()
+	M.mi_send("-gdb-exit")
 	pcall(vim.fn.jobstop, mi.get_pty())
 	pcall(vim.fn.jobstop, r_chan)
 	pcall(vim.fn.jobstop, M.tchan)
